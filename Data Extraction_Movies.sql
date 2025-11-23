@@ -1,0 +1,245 @@
+-- Databricks notebook source
+-- MAGIC %python
+-- MAGIC pip install requests
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %python
+-- MAGIC api_key = dbutils.fs.head("dbfs:/configs/api_key.txt")
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %python
+-- MAGIC import requests
+-- MAGIC import os
+-- MAGIC
+-- MAGIC TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxMmM4ZDc0ZmY2ZGNiMzI2ZmQyYmFjNDhlMjEwODM0MCIsIm5iZiI6MTc2MzgyNDg2Ni4yMTQwMDAyLCJzdWIiOiI2OTIxZDRlMmQ0NTk3MDFiZDJiNzQwMWQiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.TDvPi__fC0GSenUywCe5UOl6LU08FMncX5YIrFqeBsE"
+-- MAGIC
+-- MAGIC headers = {
+-- MAGIC     "Authorization": f"Bearer {TOKEN}",
+-- MAGIC     "accept": "application/json"
+-- MAGIC }
+-- MAGIC
+-- MAGIC url = "https://api.themoviedb.org/3/discover/person"
+-- MAGIC params = {
+-- MAGIC     "page": 1  # IMPORTANT
+-- MAGIC }
+-- MAGIC response = requests.get(url, headers=headers,params=params)
+-- MAGIC data = response.json()
+-- MAGIC
+-- MAGIC print("Current page:", data.get("page"))
+-- MAGIC print("Total pages:", data.get("total_pages"))
+-- MAGIC print("Total results:", data.get("total_results"))
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %python
+-- MAGIC import requests
+-- MAGIC
+-- MAGIC TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxMmM4ZDc0ZmY2ZGNiMzI2ZmQyYmFjNDhlMjEwODM0MCIsIm5iZiI6MTc2MzgyNDg2Ni4yMTQwMDAyLCJzdWIiOiI2OTIxZDRlMmQ0NTk3MDFiZDJiNzQwMWQiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.TDvPi__fC0GSenUywCe5UOl6LU08FMncX5YIrFqeBsE"
+-- MAGIC headers = {
+-- MAGIC     "Authorization": f"Bearer {TOKEN}",
+-- MAGIC     "accept": "application/json"
+-- MAGIC }
+-- MAGIC
+-- MAGIC movie_id = 1419406
+-- MAGIC url = f"https://api.themoviedb.org/3/movie/{movie_id}/credits"
+-- MAGIC
+-- MAGIC response = requests.get(url, headers=headers)
+-- MAGIC credits = response.json()
+-- MAGIC
+-- MAGIC # Extract cast
+-- MAGIC first_actor = cast_list[0]
+-- MAGIC print(first_actor.values())
+-- MAGIC
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %python
+-- MAGIC import requests
+-- MAGIC
+-- MAGIC # === AUTH ===
+-- MAGIC TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxMmM4ZDc0ZmY2ZGNiMzI2ZmQyYmFjNDhlMjEwODM0MCIsIm5iZiI6MTc2MzgyNDg2Ni4yMTQwMDAyLCJzdWIiOiI2OTIxZDRlMmQ0NTk3MDFiZDJiNzQwMWQiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.TDvPi__fC0GSenUywCe5UOl6LU08FMncX5YIrFqeBsE"   # <-- replace with your TMDB token
+-- MAGIC headers = {
+-- MAGIC     "Authorization": f"Bearer {TOKEN}",
+-- MAGIC     "accept": "application/json"
+-- MAGIC }
+-- MAGIC
+-- MAGIC # === MOVIE ID ===
+-- MAGIC movie_id = 1419406   # The Shadow’s Edge
+-- MAGIC
+-- MAGIC # === STEP 1: GET MOVIE CREDITS ===
+-- MAGIC credits_url = f"https://api.themoviedb.org/3/movie/{movie_id}/credits"
+-- MAGIC
+-- MAGIC credits_response = requests.get(credits_url, headers=headers)
+-- MAGIC credits = credits_response.json()
+-- MAGIC
+-- MAGIC cast_list = credits.get("cast", [])
+-- MAGIC
+-- MAGIC print(f"Total cast members found: {len(cast_list)}")
+-- MAGIC
+-- MAGIC # Safety check
+-- MAGIC if not cast_list:
+-- MAGIC     raise Exception("No actors found for this movie.")
+-- MAGIC
+-- MAGIC # === PICK FIRST ACTOR ===
+-- MAGIC first_actor = cast_list[0]
+-- MAGIC person_id = first_actor["id"]
+-- MAGIC
+-- MAGIC print(f"\nSelected actor:")
+-- MAGIC print(f"Person ID: {person_id}")
+-- MAGIC print(f"Name: {first_actor['name']}")
+-- MAGIC print(f"Character: {first_actor.get('character')}")
+-- MAGIC
+-- MAGIC # === STEP 2: GET FULL ACTOR DETAILS ===
+-- MAGIC person_url = f"https://api.themoviedb.org/3/person/{person_id}"
+-- MAGIC
+-- MAGIC person_response = requests.get(person_url, headers=headers)
+-- MAGIC person_details = person_response.json()
+-- MAGIC
+-- MAGIC print("\n=== FULL ACTOR DETAILS ===")
+-- MAGIC for key, value in person_details.items():
+-- MAGIC     print(f"{key}: {value}")
+-- MAGIC
+
+-- COMMAND ----------
+
+-- DBTITLE 1,Data Extraction from 2003-2010
+-- MAGIC %python
+-- MAGIC import requests
+-- MAGIC import time
+-- MAGIC import random
+-- MAGIC import pandas as pd
+-- MAGIC import os
+-- MAGIC
+-- MAGIC # -------------------------
+-- MAGIC # CONFIGURATION
+-- MAGIC # -------------------------
+-- MAGIC TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxMmM4ZDc0ZmY2ZGNiMzI2ZmQyYmFjNDhlMjEwODM0MCIsIm5iZiI6MTc2MzgyNDg2Ni4yMTQwMDAyLCJzdWIiOiI2OTIxZDRlMmQ0NTk3MDFiZDJiNzQwMWQiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.TDvPi__fC0GSenUywCe5UOl6LU08FMncX5YIrFqeBsE"  # your TMDb bearer token
+-- MAGIC BASE_URL = "https://api.themoviedb.org/3/discover/movie"
+-- MAGIC SAVE_ROOT = "/Volumes/raw_data_files/nyc_taxi_files/abbb/movies"
+-- MAGIC
+-- MAGIC START_YEAR = 2003
+-- MAGIC END_YEAR = 2025
+-- MAGIC
+-- MAGIC # 2-month windows (start_date, end_date, label)
+-- MAGIC BI_MONTHS = [
+-- MAGIC     ("01-01", "02-28", "01-02"),
+-- MAGIC     ("03-01", "04-30", "03-04"),
+-- MAGIC     ("05-01", "06-30", "05-06"),
+-- MAGIC     ("07-01", "08-31", "07-08"),
+-- MAGIC     ("09-01", "10-31", "09-10"),
+-- MAGIC     ("11-01", "12-31", "11-12"),
+-- MAGIC ]
+-- MAGIC
+-- MAGIC headers = {
+-- MAGIC     "Authorization": f"Bearer {TOKEN}",
+-- MAGIC     "accept": "application/json"
+-- MAGIC }
+-- MAGIC
+-- MAGIC
+-- MAGIC # -------------------------
+-- MAGIC # SAFE REQUEST FUNCTION
+-- MAGIC # -------------------------
+-- MAGIC def safe_request(url, params, retries=5):
+-- MAGIC     """Safely call TMDb with retry + exponential backoff + jitter."""
+-- MAGIC     for attempt in range(1, retries + 1):
+-- MAGIC         try:
+-- MAGIC             response = requests.get(url, headers=headers, params=params, timeout=20)
+-- MAGIC             if response.status_code == 200:
+-- MAGIC                 return response.json()
+-- MAGIC             else:
+-- MAGIC                 print(f"⚠️ TMDb returned status {response.status_code}. Retrying...")
+-- MAGIC         except Exception as e:
+-- MAGIC             print(f"⚠️ Error: {e}. Retrying attempt {attempt}/{retries}...")
+-- MAGIC
+-- MAGIC         # backoff delay
+-- MAGIC         time.sleep(1.5 * attempt)
+-- MAGIC
+-- MAGIC     raise Exception(f"❌ Failed after {retries} retries.")
+-- MAGIC
+-- MAGIC
+-- MAGIC # -------------------------
+-- MAGIC # EXTRACTION FUNCTION
+-- MAGIC # -------------------------
+-- MAGIC def extract_bimonth(year, start_date, end_date, label):
+-- MAGIC     print(f"\n📅 Extracting {year} ({label}) ...")
+-- MAGIC
+-- MAGIC     all_results = []
+-- MAGIC     page = 1
+-- MAGIC
+-- MAGIC     while True:
+-- MAGIC         params = {
+-- MAGIC             "primary_release_date.gte": f"{year}-{start_date}",
+-- MAGIC             "primary_release_date.lte": f"{year}-{end_date}",
+-- MAGIC             "sort_by": "primary_release_date.asc",
+-- MAGIC             "page": page
+-- MAGIC         }
+-- MAGIC
+-- MAGIC         data = safe_request(BASE_URL, params)
+-- MAGIC
+-- MAGIC         if "results" not in data or not data["results"]:
+-- MAGIC             break
+-- MAGIC
+-- MAGIC         all_results.extend(data["results"])
+-- MAGIC
+-- MAGIC         total_pages = data.get("total_pages", 1)
+-- MAGIC         print(f"   Page {page}/{total_pages}")
+-- MAGIC
+-- MAGIC         if page >= total_pages:
+-- MAGIC             break
+-- MAGIC
+-- MAGIC         # SAFE delay
+-- MAGIC         time.sleep(0.25 + random.random() * 0.15)
+-- MAGIC
+-- MAGIC         page += 1
+-- MAGIC
+-- MAGIC     # Convert to DataFrame
+-- MAGIC     df = pd.DataFrame(all_results)
+-- MAGIC
+-- MAGIC     # Save path
+-- MAGIC     save_dir = f"{SAVE_ROOT}/year={year}"
+-- MAGIC     os.makedirs(save_dir, exist_ok=True)
+-- MAGIC
+-- MAGIC     file_path = f"{save_dir}/bimonth={label}.csv"
+-- MAGIC     df.to_csv(file_path, index=False)
+-- MAGIC
+-- MAGIC     print(f"   ✅ Saved {len(df)} records → {file_path}")
+-- MAGIC
+-- MAGIC
+-- MAGIC # -------------------------
+-- MAGIC # MAIN LOOP
+-- MAGIC # -------------------------
+-- MAGIC for year in range(START_YEAR, END_YEAR + 1):
+-- MAGIC     print(f"\n====================")
+-- MAGIC     print(f"📢 STARTING YEAR: {year}")
+-- MAGIC     print(f"====================")
+-- MAGIC
+-- MAGIC     for start, end, label in BI_MONTHS:
+-- MAGIC         extract_bimonth(year, start, end, label)
+-- MAGIC
+-- MAGIC print("\n🎉 DONE! All 2-month movie extracts completed successfully.")
+-- MAGIC
+
+-- COMMAND ----------
+
+-- DBTITLE 1,Data Extraction from 2011-2015
+
+
+-- COMMAND ----------
+
+-- DBTITLE 1,Data Extraction from 2016-2020
+
+
+-- COMMAND ----------
+
+-- DBTITLE 1,Data Extraction from 2021-2023
+
+
+-- COMMAND ----------
+
+-- DBTITLE 1,Data Extraction from 2024-2026
